@@ -433,7 +433,7 @@ public class MaxwellIntegrationTest extends MaxwellTestWithIsolatedServer {
 	}
 
 	String testTransactions[] = {
-			"create table if not exists minimal ( account_id int, text_field text )",
+			"create table if not exists minimal ( account_id int primary key, text_field text )",
 			"BEGIN",
 			"insert into minimal set account_id = 1, text_field = 's'",
 			"insert into minimal set account_id = 2, text_field = 's'",

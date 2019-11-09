@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS `bootstrap` (
   table_name      varchar(255) charset 'utf8' NOT NULL,
   where_clause    varchar(255),
   is_complete     tinyint(1) unsigned NOT NULL default 0,
+  batch_size      int unsigned default 1000,
+  parallelism     int unsigned default 1,
   inserted_rows   bigint(20) unsigned NOT NULL DEFAULT 0,
   total_rows      bigint(20) unsigned NOT NULL DEFAULT 0,
   created_at      DATETIME default NULL,

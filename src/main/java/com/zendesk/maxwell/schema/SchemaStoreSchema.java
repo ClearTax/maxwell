@@ -120,6 +120,14 @@ public class SchemaStoreSchema {
 			performAlter(c, "alter table `bootstrap` add column where_clause varchar(1024)");
 		}
 
+		if (!getTableColumns("bootstrap", c).containsKey("batch_size")) {
+			performAlter(c, "alter table `bootstrap` add column batch_size int default 1000 after is_complete");
+		}
+
+		if (!getTableColumns("bootstrap", c).containsKey("parallelism")) {
+			performAlter(c, "alter table `bootstrap` add column parallelism int default 1 after batch_size");
+		}
+
 		HashMap<String, String> schemaColumns = getTableColumns("schemas", c);
 		if ( !schemaColumns.containsKey("charset")) {
 			String[] charsetTables = { "schemas", "databases", "tables", "columns" };
