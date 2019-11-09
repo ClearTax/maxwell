@@ -11,6 +11,8 @@ public class BootstrapTask {
 	public String database;
 	public String table;
 	public String whereClause;
+	public Integer batchSize;
+	public Integer parallelism;
 	public Long id;
 	public BinlogPosition startPosition;
 	public boolean complete;
@@ -33,6 +35,8 @@ public class BootstrapTask {
 		task.database = rs.getString("database_name");
 		task.table = rs.getString("table_name");
 		task.whereClause = rs.getString("where_clause");
+		task.batchSize = rs.getInt("batch_size");
+		task.parallelism = rs.getInt("parallelism");
 		task.startPosition = null;
 		task.complete = rs.getBoolean("is_complete");
 		task.completedAt = rs.getTimestamp("completed_at");
@@ -45,6 +49,8 @@ public class BootstrapTask {
 		t.database = (String) row.getData("database_name");
 		t.table = (String) row.getData("table_name");
 		t.whereClause = (String) row.getData("where_clause");
+		t.batchSize = (Integer) row.getData("batch_size");
+		t.parallelism = (Integer) row.getData("parallelism");
 		t.id = (Long) row.getData("id");
 
 		String binlogFile = (String) row.getData("binlog_file");

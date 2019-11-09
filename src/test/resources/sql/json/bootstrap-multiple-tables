@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS shard_1.table3 (id int unsigned auto_increment NOT NU
 INSERT INTO shard_1.table1 (txt) values ("txt1"), ("txt2"), ("txt3");
 INSERT INTO shard_1.table2 (id, txt) values (1, "txt4"), (2, "txt5"), (3, "txt6");
 INSERT INTO shard_1.table3 (txt) values ("txt7"), ("txt8"), ("txt9");
-INSERT INTO maxwell.bootstrap set database_name = 'shard_1', table_name = 'table1';
-INSERT INTO maxwell.bootstrap set database_name = 'shard_1', table_name = 'table2';
-INSERT INTO maxwell.bootstrap set database_name = 'shard_1', table_name = 'table3';
+INSERT INTO maxwell.bootstrap set database_name = 'shard_1', table_name = 'table1', batch_size = 1, parallelism = 3;
+INSERT INTO maxwell.bootstrap set database_name = 'shard_1', table_name = 'table2', batch_size = 1;
+INSERT INTO maxwell.bootstrap set database_name = 'shard_1', table_name = 'table3', batch_size = 1, parallelism = 2;
 -> { database: "shard_1", table: "table1", type: "bootstrap-insert", data: {id: 1, txt: "txt1"} }
 -> { database: "shard_1", table: "table1", type: "bootstrap-insert", data: {id: 2, txt: "txt2"} }
 -> { database: "shard_1", table: "table1", type: "bootstrap-insert", data: {id: 3, txt: "txt3"} }
