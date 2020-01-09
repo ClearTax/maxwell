@@ -27,7 +27,7 @@ public class MaxwellKinesisProducerTest {
 		when(context.getConfig()).thenReturn(config);
 		when(context.getMetrics()).thenReturn(new NoOpMetrics());
 		String kinesisStream = "test-stream";
-		MaxwellKinesisProducer producer = new MaxwellKinesisProducer(context, kinesisStream);
+		MaxwellKinesisProducer producer = new MaxwellKinesisProducer(context, kinesisStream, false, null, null);
 
 		RowMap rowMap = new RowMap("insert", "MyDatabase", "MyTable", TIMESTAMP_MILLISECONDS, new ArrayList<String>(), POSITION);
 		StringBuilder r = new StringBuilder();

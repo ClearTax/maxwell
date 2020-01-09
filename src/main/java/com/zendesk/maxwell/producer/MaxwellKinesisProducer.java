@@ -1,10 +1,17 @@
 package com.zendesk.maxwell.producer;
 
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -23,6 +30,7 @@ import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordFailedException;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 
+import com.zendesk.maxwell.util.S3Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,8 +103,14 @@ public class MaxwellKinesisProducer extends AbstractAsyncProducer {
 	private final MaxwellKinesisPartitioner partitioner;
 	private final KinesisProducer kinesisProducer;
 	private final String kinesisStream;
+	private final boolean s3Enable;
+	private final String s3Bucket;
+	private S3Util s3Util;
 
-	public MaxwellKinesisProducer(MaxwellContext context, String kinesisStream) {
+	private final String PATH_DELIMITTER = "/";
+
+	public MaxwellKinesisProducer(MaxwellContext context, String kinesisStream,
+								  boolean s3Enable, String s3Bucket, Regions region) {
 		super(context);
 
 		String partitionKey = context.getConfig().producerPartitionKey;
@@ -105,6 +119,17 @@ public class MaxwellKinesisProducer extends AbstractAsyncProducer {
 		boolean kinesisMd5Keys = context.getConfig().kinesisMd5Keys;
 		this.partitioner = new MaxwellKinesisPartitioner(partitionKey, partitionColumns, partitionFallback, kinesisMd5Keys);
 		this.kinesisStream = kinesisStream;
+		this.s3Enable = s3Enable;
+		this.s3Bucket = s3Bucket;
+
+		if (s3Enable) {
+			final AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard()
+					.withCredentials(new InstanceProfileCredentialsProvider(false))
+					.withRegion(region)
+					.build();
+
+			this.s3Util = new S3Util(amazonS3);
+		}
 
 		Path path = Paths.get("kinesis-producer-library.properties");
 		if(Files.exists(path) && Files.isRegularFile(path)) {
@@ -119,7 +144,10 @@ public class MaxwellKinesisProducer extends AbstractAsyncProducer {
 	public void sendAsync(RowMap r, AbstractAsyncProducer.CallbackCompleter cc) throws Exception {
 		String key = this.partitioner.getKinesisKey(r);
 		String value = r.toJSON(outputConfig);
-		int vsize = value.length();
+
+		if (s3Enable && isLargerThanKinesisLimit(value)) {
+			value = uploadToS3(value);
+		}
 
 		ByteBuffer encodedValue = ByteBuffer.wrap(value.getBytes("UTF-8"));
 
@@ -136,8 +164,26 @@ public class MaxwellKinesisProducer extends AbstractAsyncProducer {
 			Futures.addCallback(future, callback);
 		} catch(IllegalArgumentException t) {
 			callback.onFailure(t);
-			logger.error("Database:" + r.getDatabase() + ", Table:" + r.getTable() + ", PK:" + r.getRowIdentity().toConcatString() + ", Size:" + Integer.toString(vsize));
+			logger.error("Database:" + r.getDatabase() + ", Table:" + r.getTable() + ", PK:" + r.getRowIdentity().toConcatString() + ", Size:" + Integer.toString(value.length()));
 		}
+	}
+
+	private boolean isLargerThanKinesisLimit(final String value) {
+		return value.length() > 700000; // for 7lk characters it'll exceed the kinesis limit (around 0.93MB)
+	}
+
+	private String uploadToS3(final String value) {
+		final String keyName = Joiner.on(PATH_DELIMITTER).join(
+				"binlog_payloads",
+				UUID.randomUUID().toString() + ".txt"
+		);
+		final URL url = s3Util.upload(
+				s3Bucket,
+				keyName,
+				value
+		);
+
+		return url.toString();
 	}
 
 	public void close() {
