@@ -1,5 +1,6 @@
 package com.zendesk.maxwell;
 
+import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.github.shyiko.mysql.binlog.network.SSLMode;
@@ -66,6 +67,9 @@ public class MaxwellConfig extends AbstractConfig {
 
 	public String kinesisStream;
 	public boolean kinesisMd5Keys;
+	public boolean kinesisS3Enable;
+	public String kinesisS3Bucket;
+	public Regions kinesisS3Region;
 
 	public String sqsQueueUri;
 
@@ -252,6 +256,9 @@ public class MaxwellConfig extends AbstractConfig {
 
 		parser.section( "kinesis" );
 		parser.accepts( "kinesis_stream", "kinesis stream name" ).withOptionalArg();
+		parser.accepts("kinesis_s3_enable", "Kinesis S3 Integration Enable").withOptionalArg();
+		parser.accepts("kinesis_s3_bucket", "Kinesis S3 Bucket Name").withOptionalArg();
+		parser.accepts("kinesis_s3_region", "Kinesis S3 Region").withOptionalArg();
 		parser.accepts( "sqs_queue_uri", "SQS Queue uri" ).withRequiredArg();
 		parser.separator();
 		parser.addToSection("producer_partition_by");
@@ -482,6 +489,9 @@ public class MaxwellConfig extends AbstractConfig {
 
 		this.kinesisStream  = fetchOption("kinesis_stream", options, properties, null);
 		this.kinesisMd5Keys = fetchBooleanOption("kinesis_md5_keys", options, properties, false);
+		this.kinesisS3Enable = fetchBooleanOption("kinesis_s3_enable", options, properties, false);
+		this.kinesisS3Bucket = fetchOption("kinesis_s3_bucket", options, properties, null);
+		this.kinesisS3Region = Regions.fromName(fetchOption("kinesis_s3_region", options, properties, "ap-south-1"));
 
 		this.sqsQueueUri = fetchOption("sqs_queue_uri", options, properties, null);
 
