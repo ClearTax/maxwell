@@ -28,7 +28,7 @@ public class RowMap implements Serializable {
 	private String rowQuery;
 	private final String rowType;
 	private final String database;
-	private final String table;
+	private String table;
 	private final Long timestampMillis;
 	private final Long timestampSeconds;
 	private final Position position;
@@ -346,6 +346,10 @@ public class RowMap implements Serializable {
 
 	public String getTable() {
 		return table;
+	}
+
+	public void setTable(String table) {
+		this.table = table;
 	}
 
 	public Long getTimestamp() {

@@ -35,6 +35,10 @@ public class WrappedRowMap {
 		return row.getTable();
 	}
 
+	public void setOverride_table(String table) {
+		row.setTable(table);
+	}
+
 	public String getDatabase() {
 		return row.getDatabase();
 	}
