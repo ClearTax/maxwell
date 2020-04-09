@@ -28,7 +28,7 @@ def _setup_logging():
     log.addHandler(handler)
 
 
-def _setup_maven_project():
+def _setup_maven_dependencies():
     output = subprocess.run(MVN_CLEAN_PACKAGE_CMD, stdout=sys.stdout,
                             cwd='../')
     """Install maven dependencies for daemon"""
@@ -57,6 +57,11 @@ def _setup_maxwell_replication_privileges():
     log.info("Created User and Granted Privileges!")
 
 
+def _setup_maxwell():
+    _setup_maven_dependencies()
+    _setup_maxwell_replication_privileges()
+
+
 def _terminate_maxwell_process(pid):
     parent_process = psutil.Process(pid)
 
@@ -69,7 +74,7 @@ def _terminate_maxwell_process(pid):
     parent_process.wait()
 
 
-def start_maxwell():
+def _start_maxwell():
     run = [
         '../bin/maxwell',
         '--user=maxwell'.format(MAXWELL_USER),
@@ -92,15 +97,25 @@ def start_maxwell():
         while True:
             return_code = process.poll()
             if return_code is not None:
-                return
+                sys.exit(1)
             time.sleep(1)
     except KeyboardInterrupt:
-        # log.info("Killing Maxwell Process..")
         _terminate_maxwell_process(process.pid)
 
 
 if __name__ == '__main__':
     _setup_logging()
-    # _setup_maven_project()
-    # _setup_maxwell_replication_privileges()
-    start_maxwell()
+
+    if len(sys.argv) < 2:
+        log.error("You need to add at least one argument. Options: setup, run")
+        sys.exit(1)
+
+    if sys.argv[1] == 'setup':
+        _setup_maxwell()
+
+    elif sys.argv[1] == 'run':
+        _start_maxwell()
+
+    else:
+        log.error("Invalid arguments passed. Options: setup, run")
+
